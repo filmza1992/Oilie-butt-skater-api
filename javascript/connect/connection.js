@@ -1,25 +1,26 @@
-const mariadb = require('mariadb');
+const mariadb = require("mariadb");
 
-async function asyncFunction() {
-    let conn;
+let conn;
+
+async function createConnection() {
+  if (!conn) {
     try {
-        // Create a new connection
-        conn = await mariadb.createConnection({
-            host: '127.0.0.1',
-            port: '3306',
-            user: 'user',
-            password: 'Password123!',
-        });
-
-        // Print connection thread
-        console.log(`Connected! (id=${conn.threadId})`);
+      conn = await mariadb.createConnection({
+        host: "127.0.0.1",
+        port: "3306",
+        user: "root",
+        password: "",
+        database: "skateboard",
+      });
+      console.log('Database connection established.');
+      return conn;
     } catch (err) {
-        // Print error
-        console.log(err);
-    } finally {
-        // Close connection
-        if (conn) await conn.close();
+      console.error('Failed to establish database connection:', err);
+      throw err;
     }
+  }
+  return conn;
 }
 
-asyncFunction();
+
+module.exports = createConnection;
