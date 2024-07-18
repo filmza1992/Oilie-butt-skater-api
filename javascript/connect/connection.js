@@ -1,8 +1,8 @@
 const mariadb = require("mariadb");
 
-let conn;
 
 async function createConnection() {
+  let conn;
   if (!conn) {
     try {
       conn = await mariadb.createConnection({

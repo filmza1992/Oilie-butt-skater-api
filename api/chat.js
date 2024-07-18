@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../javascript/firebaseAdmin'); // Import Firebase Admin SDK
+
 const router = express.Router();
 
 

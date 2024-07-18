@@ -18,7 +18,9 @@ router.post('/addPost', async (req, res) => {
                 let query = 'INSERT INTO  posts (title, user_id, type, tag, create_at) values (?, ?, ?, ?, ?)';
                 const postResult = await conn.query(query, [title, user_id, type, tagsString, create_at]);
                 const postId = postResult.insertId;
+                console.log(POST_TYPE_IMAGE);
                 if (POST_TYPE_IMAGE == type) {
+                    console.log("image");
                     query = 'INSERT INTO  images (post_id, url) values (?, ?)';
 
                     const result = await conn.query(query, [postId, url]);
@@ -43,25 +45,29 @@ router.post('/addPost', async (req, res) => {
 
 });
 
-router.get('/getAll/', async (req, res) => {
+router.get('/getAll/:user_id', async (req, res) => {
     console.log('======================');
     console.log('API ROUTE GET POST ALL');
     console.log('======================');
 
-
+    const { user_id } = req.params;
     const conn = await getConnection();
     if (conn) {
         console.log('Database connection established.');
-
         try {
-            let query = 'SELECT posts.*,users.username,users.image_url AS user_image, images.url AS image_url, videos.url AS video_url FROM posts LEFT JOIN users ON posts.user_id = users.user_id LEFT JOIN images ON posts.post_id = images.post_id LEFT JOIN videos ON posts.post_id = videos.post_id'
-
+            let query = `
+                SELECT posts.*, users.username, users.image_url AS user_image, images.url AS image_url, videos.url AS video_url 
+                FROM posts 
+                LEFT JOIN users ON posts.user_id = users.user_id 
+                LEFT JOIN images ON posts.post_id = images.post_id 
+                LEFT JOIN videos ON posts.post_id = videos.post_id
+                ORDER BY posts.create_at DESC
+            `
             const rows = await conn.query(query);
             console.log(rows);
-
             if (rows.length > 0) {
-                
-                const posts =await Promise.all(rows.map(async (item) => {
+
+                const posts = await Promise.all(rows.map(async (item) => {
                     const likesQuery = `
                         SELECT COUNT(*) as likes
                         FROM posts
@@ -86,9 +92,21 @@ router.get('/getAll/', async (req, res) => {
                     JOIN comments ON posts.post_id = comments.post_id
                     WHERE posts.post_id = ? 
                 `;
-                const [commentsResult] = await conn.query(commentsQuery, [item.post_id]);
-                const comments = commentsResult.comments;
+                    const [commentsResult] = await conn.query(commentsQuery, [item.post_id]);
+                    const comments = commentsResult.comments;
 
+                    const interactionsQuery = `
+                    SELECT * from post_interaction 
+                    WHERE post_interaction.post_id = ? 
+                    and post_interaction.user_id = ?
+                `;
+
+                    const interactionsResult = await conn.query(interactionsQuery, [item.post_id, user_id]);
+                    let status = 0;
+                    console.log(interactionsResult);
+                    if (interactionsResult[0]) {
+                        status = interactionsResult[0].status;
+                    }
                     return {
                         post_id: item.post_id,
                         username: item.username,
@@ -101,12 +119,13 @@ router.get('/getAll/', async (req, res) => {
                         content: item.image_url ? item.image_url : item.video_url,
                         likes: parseInt(likes),
                         dislikes: parseInt(dislikes),
-                        comments: parseInt(comments)
+                        comments: parseInt(comments),
+                        status: status ?? 0
                     };
                 }));
                 console.log(posts);
                 console.log('GET POSTS SUCCESSFULY:');
-                res.status(200).json({ message: 'Successfuly get user' ,data:posts});
+                res.status(200).json({ message: 'Successfuly get user', data: posts });
             } else {
                 console.log('Status: 400 , NOT Found user:');
                 res.status(400).json({ message: 'NOT Found user' });
@@ -121,4 +140,43 @@ router.get('/getAll/', async (req, res) => {
     }
 });
 
+
+router.put('/interaction/', async (req, res) => {
+    console.log('======================');
+    console.log('API ROUTE UPDATE POST INTERACTION');
+    console.log('======================');
+
+    const { user_id, post_id, notify, status } = req.body;
+    console.log(user_id);
+    const conn = await getConnection();
+    if (conn) {
+        console.log('Database connection established.');
+        try {
+            // Check if the chat room exists
+            let query = `SELECT * from post_interaction where post_id = ${post_id} and user_id = '${user_id}'`;
+            const rows = await conn.query(query);
+            console.log(rows);
+            if (rows.length == 0) {
+
+                let insertQuery = `INSERT INTO  post_interaction (user_id, post_id, status, notify) values (?, ?, ?, ?)`;
+
+                const result = await conn.query(insertQuery, [user_id, post_id, status, notify]);
+                console.log('INSERT POSTSINTERACTION  SUCCESSFULY:');
+                return res.status(200).json({ message: 'Messages insert successfully' });
+            } else {
+                let updateQuery = `UPDATE post_interaction 
+                       SET status = ?
+                       WHERE user_id = ? AND post_id = ?`;
+
+                const result = await conn.query(updateQuery, [status, user_id, post_id]);
+                console.log('UPDATE POSTSINTERACTION  SUCCESSFULY:');
+                res.status(200).json({ message: 'Messages update successfully' });
+            }
+
+        } catch (error) {
+            console.error('Error updating messages:', error);
+            return res.status(500).json({ error: 'Failed to update messages' });
+        }
+    }
+});
 module.exports = router;
