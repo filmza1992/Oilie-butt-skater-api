@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const getConnection = require('../javascript/connect/connection');
-const { POST_TYPE_IMAGE, POST_TYPE_VIDEO, POST_INTERACTION_LIKE, POST_INTERACTION_DISLIKE } = require('../constant/post');
+const { POST_TYPE_IMAGE, POST_TYPE_VIDEO, POST_INTERACTION_LIKE, POST_INTERACTION_DISLIKE, QUERY_ALL_POST, QUERY_LIKE_POST, QUERY_DISLIKE_POST, QUERY_COMMENT_POST, QUERY_INTERACTION_POST, QUERY_POPULAR_POST, QUERY_FOLLOWING_POST } = require('../constant/post');
 
 router.post('/addPost', async (req, res) => {
     const { title, user_id, type, create_at, url } = req.body;
@@ -55,60 +55,30 @@ router.get('/getAll/:user_id', async (req, res) => {
     if (conn) {
         console.log('Database connection established.');
         try {
-            let query = `
-                SELECT posts.*, users.username, users.image_url AS user_image, images.url AS image_url, videos.url AS video_url 
-                FROM posts 
-                LEFT JOIN users ON posts.user_id = users.user_id 
-                LEFT JOIN images ON posts.post_id = images.post_id 
-                LEFT JOIN videos ON posts.post_id = videos.post_id
-                ORDER BY posts.create_at DESC
-            `
+            let query = QUERY_ALL_POST;
             const rows = await conn.query(query);
-            console.log(rows);
             if (rows.length > 0) {
 
                 const posts = await Promise.all(rows.map(async (item) => {
-                    const likesQuery = `
-                        SELECT COUNT(*) as likes
-                        FROM posts
-                        JOIN post_interaction ON posts.post_id = post_interaction.post_id
-                        WHERE posts.post_id = ? AND post_interaction.status = ${POST_INTERACTION_LIKE}
-                    `;
+                    const likesQuery = QUERY_LIKE_POST;
                     const [likesResult] = await conn.query(likesQuery, [item.post_id]);
                     const likes = likesResult.likes;
 
-                    const dislikesQuery = `
-                        SELECT COUNT(*) as dislikes
-                        FROM posts
-                        JOIN post_interaction ON posts.post_id = post_interaction.post_id
-                        WHERE posts.post_id = ? AND post_interaction.status = ${POST_INTERACTION_DISLIKE}
-                    `;
+                    const dislikesQuery = QUERY_DISLIKE_POST;
                     const [dislikesResult] = await conn.query(dislikesQuery, [item.post_id]);
                     const dislikes = dislikesResult.dislikes;
 
-                    const commentsQuery = `
-                    SELECT COUNT(*) as comments
-                    FROM posts
-                    JOIN comments ON posts.post_id = comments.post_id
-                    WHERE posts.post_id = ? 
-                `;
+                    const commentsQuery = QUERY_COMMENT_POST;
                     const [commentsResult] = await conn.query(commentsQuery, [item.post_id]);
                     const comments = commentsResult.comments;
 
-                    const interactionsQuery = `
-                    SELECT * from post_interaction 
-                    WHERE post_interaction.post_id = ? 
-                    and post_interaction.user_id = ?
-                `;
+                    const interactionsQuery = QUERY_INTERACTION_POST;
 
                     const interactionsResult = await conn.query(interactionsQuery, [item.post_id, user_id]);
                     let status = 0;
-                    console.log(interactionsResult);
                     if (interactionsResult[0]) {
                         status = interactionsResult[0].status;
                     }
-                    console.log(likes);
-                    console.log(dislikes);
                     
                     return {
                         post_id: item.post_id,
@@ -126,7 +96,6 @@ router.get('/getAll/:user_id', async (req, res) => {
                         status: status ?? 0
                     };
                 }));
-                console.log(posts);
                 console.log('GET POSTS SUCCESSFULY:');
                 res.status(200).json({ message: 'Successfuly get user', data: posts });
             } else {
@@ -142,6 +111,110 @@ router.get('/getAll/:user_id', async (req, res) => {
         res.status(500).json({ message: 'Failed to establish a database connection' });
     }
 });
+router.get('/feed/:user_id', async (req, res) => {
+    const {user_id} = req.params;
+    console.log(user_id);
+    const conn = await getConnection();
+    
+    console.log('======================');
+    console.log('API ROUTE GET POST FEED ALL');
+    console.log('======================');
+    if (conn) {
+        console.log('Database connection established.');
+        try {
+            // Query 1: โพสต์ที่มีการกดไลก์เยอะที่สุด
+            const popularPostsQuery = QUERY_POPULAR_POST;
+            const rowsPopular = await conn.query(popularPostsQuery, [user_id,user_id]);
+            //console.log(rowsPopular);
+            // Query 2: โพสต์ของผู้ใช้ที่ติดตาม
+            const followingPostsQuery = QUERY_FOLLOWING_POST;
+            const rowsFollowing  = await conn.query(followingPostsQuery, [user_id]);
+            //console.log(rowFollowing);
+            // รวมผลลัพธ์จากทั้งสอง query
+            const mixedPosts = shuffleWithPriority(rowsFollowing, rowsPopular);
+
+
+            const posts = await Promise.all(mixedPosts.map(async (item) => {
+                const likesQuery = QUERY_LIKE_POST;
+                const [likesResult] = await conn.query(likesQuery, [item.post_id]);
+                const likes = likesResult.likes;
+
+                const dislikesQuery = QUERY_DISLIKE_POST;
+                const [dislikesResult] = await conn.query(dislikesQuery, [item.post_id]);
+                const dislikes = dislikesResult.dislikes;
+
+                const commentsQuery = QUERY_COMMENT_POST;
+                const [commentsResult] = await conn.query(commentsQuery, [item.post_id]);
+                const comments = commentsResult.comments;
+
+                const interactionsQuery = QUERY_INTERACTION_POST;
+
+                const interactionsResult = await conn.query(interactionsQuery, [item.post_id, user_id]);
+                let status = 0;
+                if (interactionsResult[0]) {
+                    status = interactionsResult[0].status;
+                }
+                
+                return {
+                    post_id: item.post_id,
+                    username: item.username,
+                    user_image: item.user_image,
+                    title: item.title,
+                    user_id: item.user_id,
+                    type: item.type,
+                    tag: item.tag,
+                    created_at: item.create_at,
+                    content: item.image_url ? item.image_url : item.video_url,
+                    likes: parseInt(likes),
+                    dislikes: parseInt(dislikes),
+                    comments: parseInt(comments),
+                    status: status ?? 0
+                };
+            }));
+
+            console.log(posts);
+            res.status(200).json({ data: posts});
+            
+        } catch (err) {
+            console.error('Database query error:', err);
+            res.status(500).json({ message: 'Database query failed', error: err });
+        } finally {
+            if (conn) await conn.close();
+        }
+    } else {
+        console.log('Failed to establish a database connection.');
+        res.status(500).json({ message: 'Failed to establish a database connection' });
+    }
+});
+
+function shuffleWithPriority(followingPosts, popularPosts) {
+    let result = [];
+    let followingIndex = 0;
+    let popularIndex = 0;
+    
+    const followingCount = followingPosts.length;
+    const popularCount = popularPosts.length;
+    
+    // สัดส่วนที่ต้องการแสดงโพสต์จาก following มากกว่า popular
+    const followPriority = 2;  // กำหนดให้โพสต์จาก following แสดงมากกว่า popular (แสดง following 3 โพสต์ต่อ 1 โพสต์ popular)
+    
+    while (followingIndex < followingCount || popularIndex < popularCount) {
+        // แทรกโพสต์จาก following ตาม priority ที่กำหนด
+        for (let i = 0; i < followPriority && followingIndex < followingCount; i++) {
+            result.push(followingPosts[followingIndex]);
+            followingIndex++;
+        }
+
+        // แทรกโพสต์จาก popular หนึ่งครั้งหลังจากแทรก following ครบตามที่กำหนด
+        if (popularIndex < popularCount) {
+            result.push(popularPosts[popularIndex]);
+            popularIndex++;
+        }
+    }
+    
+    return result;
+}
+
 
 
 router.put('/interaction/', async (req, res) => {
