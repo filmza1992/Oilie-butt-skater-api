@@ -12,6 +12,7 @@
     "http": "^0.0.1-security",
     "mariadb": "^3.3.1",
     "nodemon": "^3.1.4",
+    "oilie-butt-skater-api": "file:",
     "uuid": "^10.0.0"
   },
   "scripts": {

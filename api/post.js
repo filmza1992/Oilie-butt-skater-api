@@ -107,6 +107,9 @@ router.get('/getAll/:user_id', async (req, res) => {
                     if (interactionsResult[0]) {
                         status = interactionsResult[0].status;
                     }
+                    console.log(likes);
+                    console.log(dislikes);
+                    
                     return {
                         post_id: item.post_id,
                         username: item.username,
