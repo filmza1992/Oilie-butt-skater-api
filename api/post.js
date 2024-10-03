@@ -128,7 +128,7 @@ router.get('/feed/:user_id', async (req, res) => {
             //console.log(rowsPopular);
             // Query 2: โพสต์ของผู้ใช้ที่ติดตาม
             const followingPostsQuery = QUERY_FOLLOWING_POST;
-            const rowsFollowing  = await conn.query(followingPostsQuery, [user_id]);
+            const rowsFollowing  = await conn.query(followingPostsQuery, [user_id,user_id]);
             //console.log(rowFollowing);
             // รวมผลลัพธ์จากทั้งสอง query
             const mixedPosts = shuffleWithPriority(rowsFollowing, rowsPopular);
@@ -185,9 +185,7 @@ router.get('/feed/:user_id', async (req, res) => {
         console.log('Failed to establish a database connection.');
         res.status(500).json({ message: 'Failed to establish a database connection' });
     }
-});
-
-function shuffleWithPriority(followingPosts, popularPosts) {
+});function shuffleWithPriority(followingPosts, popularPosts) {
     let result = [];
     let followingIndex = 0;
     let popularIndex = 0;

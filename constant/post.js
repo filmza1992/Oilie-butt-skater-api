@@ -7,7 +7,7 @@ POST_INTERACTION_LIKE = 1;
 POST_INTERACTION_DISLIKE = -1;
 
 QUERY_ALL_POST = `
-                    SELECT posts.*, users.username, users.image_url AS user_image, images.url AS image_url, videos.url AS video_url 
+                SELECT posts.*, users.username, users.image_url AS user_image, images.url AS image_url, videos.url AS video_url 
                     FROM posts 
                     LEFT JOIN users ON posts.user_id = users.user_id 
                     LEFT JOIN images ON posts.post_id = images.post_id 
@@ -40,6 +40,7 @@ QUERY_FOLLOWING_POST = `
                 WHERE posts.user_id IN (
                     SELECT followed_user_id FROM follows WHERE following_user_id = ?
                 )
+                or posts.user_id = ?
                 ORDER BY posts.create_at DESC
                 LIMIT 10;
             `;
