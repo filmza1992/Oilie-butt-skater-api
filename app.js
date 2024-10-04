@@ -9,6 +9,7 @@ const profileRouter = require('./api/profile');
 const searchRouter = require('./api/search');
 const followRouter = require('./api/follow');
 const commentRouter = require('./api/comment');
+const rankingRouter = require('./api/ranking');
 
 const firebaseConfig = require('./firebaseConfig'); 
 const app = express();
@@ -24,5 +25,6 @@ app.use('/profile', profileRouter);
 app.use('/search', searchRouter);
 app.use('/follow', followRouter);
 app.use('/comment', commentRouter);
+app.use('/ranking', rankingRouter);
 
 module.exports = app;

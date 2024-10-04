@@ -220,7 +220,7 @@ router.put('/interaction/', async (req, res) => {
     console.log('API ROUTE UPDATE POST INTERACTION');
     console.log('======================');
 
-    const { user_id, post_id, notify, status } = req.body;
+    const { user_id, post_id, notify, status,create_at } = req.body;
     console.log(user_id);
     const conn = await getConnection();
     if (conn) {
@@ -232,9 +232,9 @@ router.put('/interaction/', async (req, res) => {
             console.log(rows);
             if (rows.length == 0) {
 
-                let insertQuery = `INSERT INTO  post_interaction (user_id, post_id, status, notify) values (?, ?, ?, ?)`;
+                let insertQuery = `INSERT INTO  post_interaction (user_id, post_id, status, notify, create_at) values (?, ?, ?, ?, ?)`;
 
-                const result = await conn.query(insertQuery, [user_id, post_id, status, notify]);
+                const result = await conn.query(insertQuery, [user_id, post_id, status, notify, create_at]);
                 console.log('INSERT POSTSINTERACTION  SUCCESSFULY:');
                 return res.status(200).json({ message: 'Messages insert successfully' });
             } else {
