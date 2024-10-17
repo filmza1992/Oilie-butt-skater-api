@@ -2,26 +2,28 @@ const { v4 } = require('uuid');
 const express = require('express');
 const bcrypt = require('bcrypt');
 
-const getConnection = require('../javascript/connect/connection');
+const { getConnection } = require('../javascript/connect/connection');
+const { interfaceMessage, interfaceShowBody, operationQuery } = require('./interface/operation');
+const interfaceConnectDB = require('./interface/connect');
+const { exceptionCredentials, exceptionDBQuery, exceptionError } = require('./interface/exception');
+const { responseMessage, responseMessageId } = require('./interface/response');
 const router = express.Router();
 const uuidv4 = v4;
 const saltRounds = 10;
 
 // Login endpoint
 router.post('/login', async (req, res) => {
-  console.log('======================');
-  console.log('API ROUTE POST LOGIN');
-  console.log('======================');
 
   const { email, password } = req.body;
-  console.log('Received login data:', { email, password });
+  interfaceShowBody("POST", "LOGIN", { email, password });
 
   const conn = await getConnection();
   if (conn) {
-    console.log('Database connection established.');
+    interfaceConnectDB();
 
     try {
       const query = 'SELECT * FROM users WHERE  email = ? ';
+      operationQuery(query);
       const rows = await conn.query(query, [email]);
 
       if (rows.length > 0) {
@@ -32,33 +34,32 @@ router.post('/login', async (req, res) => {
           console.log('Login successful:', user);
           res.status(200).json({ message: 'Login successful', data: user });
         } else {
-          console.log('Login failed: Invalid credentials');
-          res.status(401).json({ message: 'Invalid credentials' });
+          exceptionCredentials(res);
         }
       } else {
-        console.log('Login failed: Invalid credentials');
-        res.status(401).json({ message: 'Invalid credentials' });
+        exceptionCredentials(res);
       }
     } catch (err) {
-      console.error('Database query error:', err);
-      res.status(500).json({ message: 'Database query failed', error: err });
+      exceptionDBQuery(err, res);
+    } finally {
+      if (conn) {
+        conn.release();
+      }
     }
   } else {
-    console.log('Failed to establish a database connection.');
-    res.status(500).json({ message: 'Failed to establish a database connection' });
+    exceptionError(err, res);
   }
 });
 
 // Signup endpoint
 router.post('/signup', async (req, res) => {
-  console.log('======================');
-  console.log('API ROUTE POST SIGNUP');
-  console.log('======================');
-
+  const { email, password, username, birth_day, image_url } = req.body;
+  
+  const body = { email, password, username, birth_day, image_url } ;
+  interfaceShowBody("POST", "SIGNUP", body);
 
   try {
     const id = uuidv4();
-    const { email, password, username, birth_day, image_url } = req.body;
 
     const create_at = Date.now();
     console.log(password);
@@ -68,37 +69,41 @@ router.post('/signup', async (req, res) => {
 
     const conn = await getConnection();
     if (conn) {
-      console.log('Database connection established.');
+      interfaceConnectDB();
       try {
         const query = 'SELECT * FROM users where email = ?';
+        operationQuery(query);
+               
         const result = await conn.query(query, [email]);
         if (result.length > 0) {
           res.status(500).json({ message: 'Email is exist : ' + email });
-          console.log('EMAIL IS EXIST:'+ email);
+          console.log('EMAIL IS EXIST:' + email);
           return;
         }
       } catch (err) {
-        res.status(500).json({ message: 'Database query failed', error: err });
+        exceptionDBQuery(err, res);
       }
       try {
         const query = 'INSERT INTO users (user_id, email, password, username, birth_day, image_url, create_at) VALUES (?, ?, ?, ?, ?, ?, ?)';
+        operationQuery(query);
+
         const result = await conn.query(query, [id, email, hashedPassword, username, birth_day, image_url, create_at]);
 
-        console.log('Signup successful:');
-        res.status(200).json({ message: 'Signup successful', userId: id });
-      } catch (err) {
-        console.error('Database query error:', err);
-        res.status(500).json({ message: 'Database query failed', error: err });
-      } finally {
+        responseMessageId(res, 'Signup successful', id);
+        } catch (err) {
+          exceptionDBQuery(err, res);   
+        } finally {
         if (conn) await conn.close();
       }
     } else {
-      console.log('Failed to establish a database connection.');
-      res.status(500).json({ message: 'Failed to establish a database connection' });
-    }
+      exceptionEstablish(err, res);  }
   } catch (err) {
     console.error('Error hashing password:', err);
     res.status(500).json({ message: 'Error hashing password', error: err });
+  } finally {
+    if (conn) {
+      conn.release();
+    }
   }
 });
 

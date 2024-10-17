@@ -14,6 +14,15 @@ QUERY_ALL_POST = `
                     LEFT JOIN videos ON posts.post_id = videos.post_id
                     ORDER BY posts.create_at DESC
                 `;
+QUERY_POST_ID =  `
+SELECT posts.*, users.username, users.image_url AS user_image, images.url AS image_url, videos.url AS video_url 
+    FROM posts 
+    LEFT JOIN users ON posts.user_id = users.user_id 
+    LEFT JOIN images ON posts.post_id = images.post_id 
+    LEFT JOIN videos ON posts.post_id = videos.post_id
+    WHERE posts.post_id = ?
+    ORDER BY posts.create_at DESC
+`;
 QUERY_POPULAR_POST = `
                 SELECT posts.*, users.username, users.image_url AS user_image, images.url AS image_url, videos.url AS video_url,
                        COUNT(post_interaction.status) AS like_count
@@ -42,7 +51,7 @@ QUERY_FOLLOWING_POST = `
                 )
                 or posts.user_id = ?
                 ORDER BY posts.create_at DESC
-                LIMIT 10;
+               
             `;
 QUERY_LIKE_POST = `
                     SELECT COUNT(*) as likes
@@ -81,5 +90,6 @@ QUERY_INTERACTION_POST = `
         QUERY_COMMENT_POST: QUERY_COMMENT_POST,
         QUERY_INTERACTION_POST: QUERY_INTERACTION_POST,
         QUERY_POPULAR_POST: QUERY_POPULAR_POST,
-        QUERY_FOLLOWING_POST: QUERY_FOLLOWING_POST
+        QUERY_FOLLOWING_POST: QUERY_FOLLOWING_POST,
+        QUERY_POST_ID: QUERY_POST_ID
     };

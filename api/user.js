@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 
-const getConnection = require('../javascript/connect/connection');
+const {getConnection} = require('../javascript/connect/connection');
 const router = express.Router();
 
 router.get('/getByEmail/:email', async (req, res) => {
@@ -29,7 +29,11 @@ router.get('/getByEmail/:email', async (req, res) => {
       } catch (err) {
           console.error('Database query error:', err);
           res.status(500).json({ message: 'Database query failed', error: err });
-      }
+      }finally {
+        if (conn){
+            conn.release();
+        }
+    }
   } else {
       console.log('Failed to establish a database connection.');
       res.status(500).json({ message: 'Failed to establish a database connection' });
@@ -64,7 +68,11 @@ router.get('/getById/:user_id', async (req, res) => {
       } catch (err) {
         console.error('Database query error:', err);
         res.status(500).json({ message: 'Database query failed', error: err });
-      }
+      }finally {
+        if (conn){
+            conn.release();
+        }
+    }
     } else {
       console.log('Failed to establish a database connection.');
       res.status(500).json({ message: 'Failed to establish a database connection' });

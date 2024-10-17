@@ -1,26 +1,48 @@
+require('dotenv').config(); 
 const mariadb = require("mariadb");
 
-
-async function createConnection() {
+// ONLINE POOL
+const pool = mariadb.createPool({
+  host: process.env.DATABASE_IP,
+  port: process.env.DATABASE_PORT,
+  user: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
+  connectionLimit: 5 
+});
+//LOCAL POOL
+// const pool = mariadb.createPool({
+//   host: process.env.DATABASE_LOCAL_IP,
+//   port: process.env.DATABASE_PORT,
+//   user: process.env.DATABASE_USER_LOCAL,
+//   password: process.env.DATABASE_PASSWORD_LOCAL,
+//   database: process.env.DATABASE_NAME_LOCAL,
+//   connectionLimit: 5 
+// });
+// ฟังก์ชันเพื่อดึง connection จาก pool
+async function getConnection() {
   let conn;
-  if (!conn) {
-    try {
-      conn = await mariadb.createConnection({
-        host: "127.0.0.1",
-        port: "3306",
-        user: "root",
-        password: "",
-        database: "skateboard",
-      });
-      console.log('Database connection established.');
-      return conn;
-    } catch (err) {
-      console.error('Failed to establish database connection:', err);
-      throw err;
-    }
+  try {
+    conn = await pool.getConnection(); // ดึง connection จาก pool
+    return conn;
+  } catch (err) {
+    console.error('Failed to get connection from pool:', err);
+    throw err;
   }
-  return conn;
 }
 
+// อย่าลืมคืน connection เมื่อทำงานเสร็จ
+async function releaseConnection(conn) {
+  if (conn) {
+    try {
+      conn.release(); // คืน connection กลับไปที่ pool
+    } catch (err) {
+      console.error('Failed to release connection:', err);
+    }
+  }
+}
 
-module.exports = createConnection;
+module.exports = {
+  getConnection,
+  releaseConnection
+};

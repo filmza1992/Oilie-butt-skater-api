@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const getConnection = require('../javascript/connect/connection');
+const {getConnection} = require('../javascript/connect/connection');
 
 router.post('/following', async (req, res) => {
     console.log('======================');
@@ -22,6 +22,10 @@ router.post('/following', async (req, res) => {
         } catch (err) {
             console.error('Database query error:', err);
             res.status(500).json({ message: 'Database query failed', error: err });
+        }finally {
+            if (conn){
+                conn.release();
+            }
         }
     } else {
         console.log('Failed to establish a database connection.');
@@ -48,6 +52,10 @@ router.post('/unfollowing', async (req, res) => {
         } catch (err) {
             console.error('Database query error:', err);
             res.status(500).json({ message: 'Database query failed', error: err });
+        }finally {
+            if (conn){
+                conn.release();
+            }
         }
     } else {
         console.log('Failed to establish a database connection.');
@@ -86,6 +94,10 @@ router.post('/check/following', async (req, res) => {
         } catch (err) {
             console.error('Database query error:', err);
             res.status(500).json({ message: 'Database query failed', error: err });
+        }finally {
+            if (conn){
+                conn.release();
+            }
         }
     } else {
         console.log('Failed to establish a database connection.');

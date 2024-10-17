@@ -38,7 +38,11 @@ router.put('/chat_rooms/:roomId', async (req, res) => {
   } catch (error) {
     console.error('Error updating messages:', error);
     return res.status(500).json({ error: 'Failed to update messages' });
-  }
+  }finally {
+    if (conn){
+        conn.release();
+    }
+}
 });
 router.get('/chat_rooms/:roomId/messages/:userId', (req, res) => {
     const roomId = req.params.roomId;
@@ -92,7 +96,11 @@ router.get('/chat_rooms/:roomId/messages/:userId', (req, res) => {
     } catch (error) {
       console.error('Error fetching messages:', error);
       return res.status(500).json({ error: 'Failed to fetch messages' });
-    }
+    }finally {
+      if (conn){
+          conn.release();
+      }
+  }
   });
 
   

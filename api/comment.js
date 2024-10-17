@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const getConnection = require('../javascript/connect/connection');
+const {getConnection} = require('../javascript/connect/connection');
 
 
 router.get('/:post_id', async (req, res) => {
@@ -36,7 +36,9 @@ router.get('/:post_id', async (req, res) => {
             console.error('Database query error:', err);
             res.status(500).json({ message: 'Database query failed', error: err });
         } finally {
-            if (conn) await conn.close(); // ปิดการเชื่อมต่อฐานข้อมูล
+            if (conn){
+                conn.release();
+            }
         }
     } else {
         console.log('Failed to establish a database connection.');
@@ -86,7 +88,9 @@ router.post('/:post_id', async (req, res) => {
             console.error('Database query error:', err);
             res.status(500).json({ message: 'Database query failed', error: err });
         } finally {
-            if (conn) await conn.close(); // ปิดการเชื่อมต่อฐานข้อมูล
+            if (conn){
+                conn.release();
+            }
         }
     } else {
         console.log('Failed to establish a database connection.');
