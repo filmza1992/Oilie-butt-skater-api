@@ -9,7 +9,7 @@ const DATABASE_PORT = process.env.DATABASE_PORT;
 
 
 const SERVER_IP = process.env.SERVER_IP || "localhost";
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 const server = http.createServer(app);
 

@@ -8,7 +8,7 @@ const responseMessageAndData = (res, message, data) => {
 const responseMessageId = (res, message, id) => {
     console.log('======================')
     console.log('Response: ', { message: message , id: id});
-    res.status(200).json({ message: message + id })
+    res.status(200).json({ message: message, userId: id })
 }
 
 const responseMessage = (res, message) => {

@@ -388,10 +388,18 @@ router.get('/getAllByUser/:target_id/:user_id', async (req, res) => {
                     const [commentsResult] = await conn.query(commentsQuery, [postId]);
                     const comments = commentsResult.comments;
 
+                    const interactionsQuery = QUERY_INTERACTION_POST;
+                    const interactionsResult = await conn.query(interactionsQuery, [postId, user_id]);
+                    let status = 0;
+                    if (interactionsResult[0]) {
+                        status = interactionsResult[0].status;
+                    }
+        
                     // บันทึกค่าคะแนนลงใน postsMap
                     postsMap[postId].likes = parseInt(likes);
                     postsMap[postId].dislikes = parseInt(dislikes);
                     postsMap[postId].comments = parseInt(comments);
+                    postsMap[postId].status = status;
 
                     sumLikes += parseInt(likes);
                 }));

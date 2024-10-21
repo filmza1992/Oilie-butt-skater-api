@@ -60,7 +60,16 @@ router.post('/addPost', async (req, res) => {
                     console.log('Inserted Images Successfully');
                     responseMessageId(res, 'Post added successfully', postId);
                 } else if (POST_TYPE_VIDEO == type) {
-                    console.log('Inserted Video Successfuly');
+                    const insertVideoQuery = 'INSERT INTO videos (post_id, url) values (?, ?)';
+                    operationQuery(insertVideoQuery);
+
+                    const videoInsertPromises = urls.map(url => {
+                        return conn.query(insertVideoQuery, [postId, url]);
+                    });
+                    await Promise.all(videoInsertPromises); // รอให้แทรกรูปภาพทั้งหมดเสร็จ
+
+                    console.log('Inserted Images Successfully');
+                    responseMessageId(res, 'Post added successfully', postId);
                 }
             } catch (err) {
                 exceptionDBQuery(err, res);

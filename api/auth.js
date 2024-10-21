@@ -58,6 +58,7 @@ router.post('/signup', async (req, res) => {
   const body = { email, password, username, birth_day, image_url } ;
   interfaceShowBody("POST", "SIGNUP", body);
 
+  const conn = await getConnection();
   try {
     const id = uuidv4();
 
@@ -67,7 +68,6 @@ router.post('/signup', async (req, res) => {
 
     console.log('Received signup data:', { id, email, hashedPassword, username, birth_day, image_url, create_at });
 
-    const conn = await getConnection();
     if (conn) {
       interfaceConnectDB();
       try {
