@@ -264,12 +264,20 @@ router.get('/getAll/:user_id', async (req, res) => {
                         status: status
                     };
                 }));
+
+                const followQuery = `
+                SELECT COUNT(*) as follows
+                FROM follows
+                WHERE followed_user_id = ?
+            `;
+            const followResult = await conn.query(followQuery, [user_id]);
+            sumFollows = parseInt(followResult[0].follows);
                 
                 posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                 const data = {
                     posts: posts,
                     sumLikes: sumLikes,
-                    follow: 0
+                    follow: sumFollows
                 };
             
                 console.log(data);
@@ -406,10 +414,17 @@ router.get('/getAllByUser/:target_id/:user_id', async (req, res) => {
                 const posts =  Object.values(postsMap)
                 posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
            
+                const followQuery = `
+                SELECT COUNT(*) as follows
+                FROM follows
+                WHERE followed_user_id = ?
+            `;
+            const followResult = await conn.query(followQuery, [target_id]);
+            sumFollows = parseInt(followResult[0].follows);
                 const data = {
                     posts: posts,
                     sumLikes: sumLikes,
-                    follow: 0 // Assuming follow logic will be implemented elsewhere
+                    follow: sumFollows// Assuming follow logic will be implemented elsewhere
                 };
 
                 console.log(data);

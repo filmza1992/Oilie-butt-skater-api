@@ -86,8 +86,15 @@ router.post('/signup', async (req, res) => {
       try {
         const query = 'INSERT INTO users (user_id, email, password, username, birth_day, image_url, create_at) VALUES (?, ?, ?, ?, ?, ?, ?)';
         operationQuery(query);
+        let birthDay = "";
+        if (birth_day == "") {
+            const today = new Date();
+            birthDay = today.toISOString().split('T')[0];  // จะแสดงเป็น 'YYYY-MM-DD'
+        } else {
+            birthDay = birth_day;
+        }
 
-        const result = await conn.query(query, [id, email, hashedPassword, username, birth_day, image_url, create_at]);
+        const result = await conn.query(query, [id, email, hashedPassword, username, birthDay, image_url, create_at]);
 
         responseMessageId(res, 'Signup successful', id);
         } catch (err) {
