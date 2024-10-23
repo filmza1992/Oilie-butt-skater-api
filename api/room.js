@@ -5,7 +5,7 @@ const { interfaceShowId } = require('./interface/operation');
 const { exceptionError, exceptionEstablish, exceptionDBQuery } = require('./interface/exception');
 const { responseMessageAndData } = require('./interface/response');
 const interfaceConnectDB = require('./interface/connect');
-const { sortRoomsByDistance } = require('./util/distance');
+const { sortRoomsByDistance, addDistanceToRooms } = require('./util/distance');
 
 
 router.post('/', async (req, res) => {
@@ -257,6 +257,7 @@ router.post('/public/:user_id', async (req, res) => {
                 } else {
                     newRoom = rooms;
                 }
+                newRoom = addDistanceToRooms(newRoom, latitude, longitude);
                 console.log(rooms);
                 if (rooms.length > 0) {
                     responseMessageAndData(res, 'Public rooms fetched successfully', newRoom);
@@ -327,6 +328,9 @@ router.post('/join/:user_id/', async (req, res) => {
                     newCreate = createdRooms;
                 }
                 // รวมข้อมูลห้องทั้งหมด
+
+                newJoin = addDistanceToRooms(newJoin, latitude, longitude);
+                newCreate = addDistanceToRooms(newCreate, latitude, longitude);
                 const allRooms = {
                     joinedRooms: newJoin,
                     createdRooms: newCreate
@@ -383,7 +387,8 @@ router.post('/follow/:user_id/', async (req, res) => {
                 } else {
                     newFollowRoom = followedRooms;
                 }
-
+                newFollowRoom = addDistanceToRooms(newFollowRoom, latitude, longitude);
+                
                 if (followedRooms.length > 0) {
                     responseMessageAndData(res, 'Followed rooms fetched successfully', newFollowRoom);
                 } else {

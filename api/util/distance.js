@@ -15,6 +15,12 @@ const deg2rad = (deg) => {
     return deg * (Math.PI / 180);
 };
 
+const addDistanceToRooms = (rooms, userLat, userLon) => {
+    return rooms.map(room => {
+        const distance = getDistanceFromLatLonInKm(userLat, userLon, room.latitude, room.longitude);
+        return { ...room, distance }; // เพิ่ม attribute distance
+    });
+};
 // ฟังก์ชันสำหรับการเรียงลำดับห้อง
 const sortRoomsByDistance = (rooms, userLat, userLon) => {
     return rooms.sort((roomA, roomB) => {
@@ -24,4 +30,4 @@ const sortRoomsByDistance = (rooms, userLat, userLon) => {
     });
 };
 
-module.exports = {sortRoomsByDistance};
+module.exports = {sortRoomsByDistance, addDistanceToRooms};
